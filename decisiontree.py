@@ -57,10 +57,9 @@ class Node:
         heightOfFrame = testData.shape[0]
         for i in range(heightOfFrame):
             l.append( self.testOnLinedFrame( testData.iloc[i] ) )
-        r = pd.Series(l)
+        r = pd.DataFrame(l, index=testData.index, columns=['Survived'])
         #r.index = testData.index
         return r 
-
             
     def testOnLinedFrame(self, dataFrameLine):
         if len(self.children) == 0 :
@@ -75,6 +74,15 @@ class Node:
                 else : 
                     voteCounter[prediction] += 1
             return  max(voteCounter, key=voteCounter.get)
+
+    def printTree(self, level=0):
+        if len(self.children) == 0:
+            print(f'{"    "*(level)}return {repr(self.label)}')
+        else :
+            for i, child in enumerate(self.children) :
+                print(f'{"|   "*level}{"if" if i==0 else "elif"} {self.label} == {repr(child)} :')
+                self.children[child].printTree(level = level + 1)
+
             
 class DecisionTree:
     def __init__(self, trainingData, maxDepth):
@@ -87,6 +95,9 @@ class DecisionTree:
 
     def runModel(self, testingData):
         return self.root.runModel(testingData)
+    
+    def printTree(self):
+        self.root.printTree(level=0)
 
 
 if __name__ == "__main__":
@@ -95,36 +106,25 @@ if __name__ == "__main__":
     #data = pd.read_csv(sys.argv[1])
     #testData = pd.read_csv(sys.argv[2])
     #maxDepth = int(sys.argv[3])
-    data = pd.read_csv("train3.csv")
-    testData = pd.read_csv("test.csv" ).set_index(['PassengerId'])
-    maxDepth = 3
+
+    data = pd.read_csv("titanic_cleaned/cleaned_training_data.csv")
+    data.set_index('PassengerId', inplace=True)
+    maxDepth = 9
+
     tree = DecisionTree(data, maxDepth)
     tree.trainModel()
+
+    testData = pd.read_csv("titanic_cleaned/cleaned_testing_data.csv" )#.set_index(['PassengerId'])
+    testData.set_index('PassengerId', inplace=True)
     predicted = tree.runModel(testData)
-    testing_output = pd.read_csv('gender_submission.csv')['Survived']
-    print((testing_output == predicted).sum()/ len(testing_output))
-    #output    = testData[ testData.columns[-1] ] 
-    #mask = predicted == output
-    #print("%5.2f%%" % (mask.sum()/len(mask)* 100) )
+    
+    
+    print(predicted)
+    testing_labels = pd.read_csv('gender_submission.csv')#['Survived']
+    testing_labels.set_index('PassengerId', inplace=True)
+    #testData['Survived'] 
 
-
-
-
-
-
-#Optimizing types for a less memory-consuming data types
-#dtypes_type      = ['int16', 'bool','categor   y','object','category','float32','int8','int8','object','float32','object','category']
-#optimized_dtypes = dict(zip(data.columns, dtypes_type))
-#train = pd.read_csv('train2.csv') #, dtype=optimized_dtypes)
-#del train['PassengerId']
-#del train['Ticket']
-#del train['Name']
-#train['Cabin'] = train['Cabin'].fillna('empty')
-#mn = train['Age'].mean()
-#std = train['Age'].std()
-#train.loc[train['Age'].isna(), 'Age'] = np.random.randint(mn - std, mn + std, size = train['Age'].isna().sum())
-#train.to_csv('train3.csv', index=False, mode='w')
-
-#print(new_data)
-#print(new_data.dtypes)
-#print(new_data.isnull().sum())      # Prints number of null values in every attribute
+    predicted.to_csv('titanic_subm.csv')
+    
+    tree.printTree()
+    print((testing_labels == predicted).sum()/ len(testing_labels))
