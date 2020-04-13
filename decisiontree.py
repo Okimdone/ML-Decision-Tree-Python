@@ -13,7 +13,8 @@ class Node:
     '''
     S : is a Series
     '''
-    def selfEntropy(self, S): # S is a pandas::Series 
+    @staticmethod
+    def selfEntropy(S): # S is a pandas::Series 
         value_probabilies = S.value_counts() / len(S)
         return - ( value_probabilies * value_probabilies.apply(math.log2) ).sum()
 
@@ -23,7 +24,8 @@ class Node:
     -> returns the conditional entropy H(Y | X)  using : 
         sum(p(x and y)* log(p(x) / p(x and y)) )
     '''
-    def conditionalEntropy(self, X_Y:list): 
+    @staticmethod
+    def conditionalEntropy(X_Y:list): 
         # Series of the form (index = (X,Y), value = P(x and y) )
         probability_XandY = X_Y.groupby(list(X_Y.columns)).size() / len(X_Y) 
         probability_X = probability_XandY.groupby(level=0).sum()
